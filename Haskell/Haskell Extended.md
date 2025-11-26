@@ -1,6 +1,6 @@
-# Haskell: Complete Theory and Reference Guide
+# Haskell: Complete Theory and Reference Guide (Extended Edition)
 
-A comprehensive guide covering all essential Haskell concepts from fundamentals through intermediate topics, organized by theme for easy reference.
+A comprehensive guide covering all essential Haskell concepts from fundamentals through advanced topics, organized by theme for easy reference. Includes extended sections on Higher-Order Functions and User-Defined Data Types.
 
 ---
 
@@ -20,12 +20,15 @@ A comprehensive guide covering all essential Haskell concepts from fundamentals 
 12. [Guards](#guards)
 13. [Where Clauses](#where-clauses)
 14. [List Comprehensions](#list-comprehensions)
-15. [Higher-Order Functions](#higher-order-functions)
-16. [Strings & Characters](#strings--characters)
-17. [Modules & Imports](#modules--imports)
-18. [I/O Basics](#io-basics)
-19. [Practical Examples](#practical-examples)
-20. [Quick Reference Table](#quick-reference-table)
+15. [Higher-Order Functions (Extended)](#higher-order-functions-extended)
+16. [User-Defined Data Types](#user-defined-data-types)
+17. [Recursive Types](#recursive-types)
+18. [Strings & Characters](#strings--characters)
+19. [Modules & Imports](#modules--imports)
+20. [I/O Basics](#io-basics)
+21. [Practical Examples](#practical-examples)
+22. [Lab 3 Exercise Solutions](#lab-3-exercise-solutions)
+23. [Quick Reference Table](#quick-reference-table)
 
 ---
 
@@ -179,6 +182,21 @@ Haskell uses type classes to group types that support certain operations:
 - `Ord` – types that can be ordered (`<`, `>`, `<=`, `>=`)
 - `Show` – types that can be converted to strings
 
+### Polymorphic Types
+
+Functions can work with multiple types using type variables:
+
+```haskell
+-- 'a' is a type variable - works with any type
+length :: [a] -> Int
+head :: [a] -> a
+fst :: (a, b) -> a
+
+-- Constrained polymorphism with type classes
+max :: Ord a => a -> a -> a
+sum :: Num a => [a] -> a
+```
+
 ---
 
 ## Functions
@@ -254,6 +272,20 @@ addOne x = x + 1
 
 addThenDouble = double . addOne  -- apply addOne, then double
 addThenDouble 5  -- (5 + 1) * 2 = 12
+```
+
+### The `$` Operator (Function Application)
+
+The `$` operator applies a function to an argument with low precedence:
+
+```haskell
+-- These are equivalent:
+f (g (h x))
+f $ g $ h x
+
+-- Useful to avoid parentheses:
+sum (map (^2) [1..10])
+sum $ map (^2) [1..10]
 ```
 
 ---
@@ -441,39 +473,6 @@ sumListTail xs = go xs 0
 
 The compiler can optimize tail recursion, avoiding stack overflow.
 
-### Higher-Order Functions for Iteration
-
-Instead of explicit loops, use built-in functions:
-
-**map** – Transform each element:
-```haskell
-map (^2) [1..5]        -- [1,4,9,16,25]
-map toLower "HELLO"    -- "hello"
-```
-
-**filter** – Select elements:
-```haskell
-filter even [1..10]    -- [2,4,6,8,10]
-filter (>0) [-2,-1,0,1,2]  -- [1,2]
-```
-
-**foldr / foldl** – Accumulate results:
-```haskell
-foldr (+) 0 [1,2,3,4]  -- 10
-foldl (*) 1 [1,2,3,4]  -- 24
-```
-
-### List Comprehensions
-
-Generate and filter lists declaratively:
-
-```haskell
-[x^2 | x <- [1..10]]                    -- [1,4,9,...,100]
-[x | x <- [1..20], even x]              -- [2,4,6,...,20]
-[x^2 | x <- [1..10], even x]            -- [4,16,36,64,100]
-[(x,y) | x <- [1,2], y <- ['a','b']]   -- [(1,'a'),(1,'b'),(2,'a'),(2,'b')]
-```
-
 ---
 
 ## Lists
@@ -539,19 +538,14 @@ sort [3,1,2]             -- [1,2,3]
 take 3 [1..10]           -- [1,2,3]
 drop 2 [1..5]            -- [3,4,5]
 zip [1,2,3] ['a','b','c']  -- [(1,'a'),(2,'b'),(3,'c')]
-```
-
-### List Comprehensions for Advanced Operations
-
-```haskell
--- Transform and filter
-[x*2 | x <- [1..5], x > 2]  -- [6,8,10]
-
--- Multiple generators
-[(x,y) | x <- [1,2], y <- [3,4]]  -- [(1,3),(1,4),(2,3),(2,4)]
-
--- Nested comprehensions
-[[x*y | y <- [1..3]] | x <- [1..3]]  -- [[1,2,3],[2,4,6],[3,6,9]]
+maximum [1,5,3]          -- 5
+minimum [1,5,3]          -- 1
+sum [1,2,3,4]            -- 10
+product [1,2,3,4]        -- 24
+and [True, True, False]  -- False
+or [True, False, False]  -- True
+all even [2,4,6]         -- True
+any odd [2,4,6]          -- False
 ```
 
 ---
@@ -686,32 +680,6 @@ gradeScore score
   | otherwise = "F"
 ```
 
-**Using Functions in Guards:**
-
-```haskell
-classify :: Int -> String
-classify x
-  | even x = "Even"
-  | otherwise = "Odd"
-```
-
-**Guard with Pattern Matching:**
-
-```haskell
-sumList :: [Int] -> Int
-sumList xs
-  | null xs = 0
-  | otherwise = head xs + sumList (tail xs)
-```
-
-### Comparison: Guards vs If-Then-Else
-
-| Aspect | Guards | If-Then-Else |
-|--------|--------|--------------|
-| Readability | Excellent for multiple conditions | Poor when nested |
-| Scope | Visible to all guards in function | Local to each branch |
-| Use Case | Multi-way conditional | Simple binary choice |
-
 ---
 
 ## Where Clauses
@@ -735,59 +703,19 @@ Shared values across guards:
 ```haskell
 bmi :: Double -> Double -> String
 bmi weight height
-  | bmi < 18.5 = "Underweight"
-  | bmi < 25.0 = "Normal"
-  | bmi < 30.0 = "Overweight"
+  | bmiVal < 18.5 = "Underweight"
+  | bmiVal < 25.0 = "Normal"
+  | bmiVal < 30.0 = "Overweight"
   | otherwise = "Obese"
   where
-    bmi = weight / height ^ 2
-```
-
-### Multiple Definitions
-
-```haskell
-describeTriple :: Int -> Int -> Int -> String
-describeTriple a b c = result
-  where
-    sum = a + b + c
-    product = a * b * c
-    average = sum `div` 3
-    result = "Sum: " ++ show sum ++ ", Avg: " ++ show average
-```
-
-### Pattern Matching in Where
-
-```haskell
-getCoordinates :: (Double, Double) -> String
-getCoordinates pair = "X: " ++ show x ++ ", Y: " ++ show y
-  where
-    (x, y) = pair
-```
-
-### Indentation Rules
-
-- `where` must be indented more than the function line
-- All bindings in the `where` block must align
-
-```haskell
--- Correct
-func x = a + b
-  where
-    a = x + 1
-    b = x * 2
-
--- Incorrect (where at same level as func)
-func x = a + b
-where
-  a = x + 1
-  b = x * 2
+    bmiVal = weight / height ^ 2
 ```
 
 ---
 
 ## List Comprehensions
 
-List comprehensions provide a declarative way to generate and filter lists, inspired by mathematical set notation.
+List comprehensions provide a declarative way to generate and filter lists.
 
 ### Basic Syntax
 
@@ -795,28 +723,15 @@ List comprehensions provide a declarative way to generate and filter lists, insp
 [expression | generator, predicate]
 ```
 
-- **expression:** What to include in the result
-- **generator:** Declaration `variable <- list`
-- **predicate:** Filter condition (optional)
-
 ### Simple Examples
 
-**Generate squares:**
-
 ```haskell
-[x^2 | x <- [1..5]]  -- [1,4,9,16,25]
-```
-
-**Generate and filter:**
-
-```haskell
-[x | x <- [1..10], even x]  -- [2,4,6,8,10]
-[x^2 | x <- [1..10], x > 5]  -- [36,49,64,81,100]
+[x^2 | x <- [1..5]]           -- [1,4,9,16,25]
+[x | x <- [1..10], even x]    -- [2,4,6,8,10]
+[x^2 | x <- [1..10], x > 5]   -- [36,49,64,81,100]
 ```
 
 ### Multiple Generators
-
-Create Cartesian products:
 
 ```haskell
 [(x, y) | x <- [1,2], y <- ['a','b']]
@@ -825,85 +740,209 @@ Create Cartesian products:
 
 ### Multiple Predicates
 
-All conditions must be true:
-
 ```haskell
 [x | x <- [1..20], even x, x > 10]  -- [12,14,16,18,20]
 ```
 
-### Dependent Generators
-
-Later generators can depend on earlier ones:
-
-```haskell
-[(x, y) | x <- [1..3], y <- [x..3]]
--- [(1,1),(1,2),(1,3),(2,2),(2,3),(3,3)]
-```
-
-### Nested Comprehensions
-
-```haskell
--- Remove odds from each sublist
-removeOdds = [[x | x <- xs, even x] | xs <- [[1,2,3],[2,4,6],[5,7,8]]]
--- [[2],[2,4,6],[8]]
-```
-
-### Complex Transformations
-
-```haskell
--- Pairs of elements that sum to 10
-pairs = [(x, y) | x <- [1..9], y <- [1..9], x + y == 10, x < y]
--- [(1,9),(2,8),(3,7),(4,6),(5,5)]
-```
-
-### Comprehension with Functions
-
-```haskell
-labels = [show x ++ "!" | x <- [1..5]]
--- ["1!","2!","3!","4!","5!"]
-```
-
 ---
 
-## Higher-Order Functions
+## Higher-Order Functions (Extended)
 
-Higher-order functions take functions as arguments or return functions.
+Higher-order functions take functions as arguments or return functions. This is essential for Lab 3!
 
 ### Map
 
-Apply a function to every element:
-
+**Type:**
 ```haskell
 map :: (a -> b) -> [a] -> [b]
+```
 
+**What it does:** Applies a function to every element of a list.
+
+**Examples:**
+```haskell
 map (+1) [1,2,3]         -- [2,3,4]
 map (^2) [1,2,3]         -- [1,4,9]
 map toLower "HELLO"      -- "hello"
+map show [1,2,3]         -- ["1","2","3"]
+map (*2) [1,2,3,4]       -- [2,4,6,8]
+```
+
+**Implementation:**
+```haskell
+map :: (a -> b) -> [a] -> [b]
+map _ []     = []
+map f (x:xs) = f x : map f xs
 ```
 
 ### Filter
 
-Select elements that satisfy a condition:
-
+**Type:**
 ```haskell
 filter :: (a -> Bool) -> [a] -> [a]
-
-filter even [1..10]      -- [2,4,6,8,10]
-filter (>5) [1..10]      -- [6,7,8,9,10]
-filter (>0) [-2,-1,0,1,2]  -- [1,2]
 ```
 
-### Fold (Reduce)
+**What it does:** Keeps only elements that satisfy a predicate (return True).
 
-Accumulate elements into a single value:
+**Examples:**
+```haskell
+filter even [1..10]       -- [2,4,6,8,10]
+filter (>5) [1..10]       -- [6,7,8,9,10]
+filter (>0) [-2,-1,0,1,2] -- [1,2]
+filter (/= 'a') "banana"  -- "bnn"
+```
 
+**Implementation:**
+```haskell
+filter :: (a -> Bool) -> [a] -> [a]
+filter _ []     = []
+filter p (x:xs)
+  | p x       = x : filter p xs
+  | otherwise = filter p xs
+```
+
+### Foldr (Fold Right)
+
+**Type:**
 ```haskell
 foldr :: (a -> b -> b) -> b -> [a] -> b
-foldl :: (b -> a -> b) -> b -> [a] -> b
+```
 
-sum [1,2,3,4]            -- 10 (foldr (+) 0)
-product [1,2,3,4]        -- 24 (foldr (*) 1)
-foldr (++) "" ["a","b"]  -- "ab"
+**What it does:** Reduces a list to a single value by applying a function from right to left.
+
+**Parameters:**
+1. `(a -> b -> b)` - A combining function
+2. `b` - An initial/base value (accumulator starting point)
+3. `[a]` - The list to fold
+
+**How it works:**
+```
+foldr f z [x1, x2, x3] = f x1 (f x2 (f x3 z))
+```
+
+**Examples:**
+```haskell
+foldr (+) 0 [1,2,3,4]     -- 10 (sum)
+foldr (*) 1 [1,2,3,4]     -- 24 (product)
+foldr (&&) True [True, True, False]  -- False
+foldr (||) False [False, True, False] -- True
+foldr (:) [] [1,2,3]      -- [1,2,3] (identity for lists)
+foldr (++) "" ["a","b","c"] -- "abc"
+foldr max 0 [1,5,3,2]     -- 5 (maximum, starting from 0)
+```
+
+**Visual Example for `foldr (+) 0 [1,2,3]`:**
+```
+foldr (+) 0 [1,2,3]
+= 1 + (foldr (+) 0 [2,3])
+= 1 + (2 + (foldr (+) 0 [3]))
+= 1 + (2 + (3 + (foldr (+) 0 [])))
+= 1 + (2 + (3 + 0))
+= 1 + (2 + 3)
+= 1 + 5
+= 6
+```
+
+**Implementation:**
+```haskell
+foldr :: (a -> b -> b) -> b -> [a] -> b
+foldr _ z []     = z
+foldr f z (x:xs) = f x (foldr f z xs)
+```
+
+### Foldl (Fold Left)
+
+**Type:**
+```haskell
+foldl :: (b -> a -> b) -> b -> [a] -> b
+```
+
+**What it does:** Reduces a list from left to right (tail-recursive, more efficient for large lists).
+
+**How it works:**
+```
+foldl f z [x1, x2, x3] = f (f (f z x1) x2) x3
+```
+
+**Examples:**
+```haskell
+foldl (+) 0 [1,2,3,4]     -- 10
+foldl (-) 0 [1,2,3]       -- -6 (0-1-2-3)
+```
+
+### Foldl1 and Foldr1 (No Initial Value)
+
+Use the first element as the initial value:
+
+```haskell
+foldr1 :: (a -> a -> a) -> [a] -> a
+foldl1 :: (a -> a -> a) -> [a] -> a
+
+foldr1 max [1,5,3,2]  -- 5
+foldr1 (+) [1,2,3]    -- 6
+```
+
+**Warning:** Crashes on empty list!
+
+### Useful Patterns with Fold
+
+**Sum:**
+```haskell
+sum' :: Num a => [a] -> a
+sum' = foldr (+) 0
+```
+
+**Product:**
+```haskell
+product' :: Num a => [a] -> a
+product' = foldr (*) 1
+```
+
+**And (all true):**
+```haskell
+and' :: [Bool] -> Bool
+and' = foldr (&&) True
+```
+
+**Or (any true):**
+```haskell
+or' :: [Bool] -> Bool
+or' = foldr (||) False
+```
+
+**Length:**
+```haskell
+length' :: [a] -> Int
+length' = foldr (\_ acc -> acc + 1) 0
+```
+
+**Reverse:**
+```haskell
+reverse' :: [a] -> [a]
+reverse' = foldl (flip (:)) []
+```
+
+**Maximum:**
+```haskell
+maximum' :: Ord a => [a] -> a
+maximum' = foldr1 max
+```
+
+### Defining Map with Foldr
+
+```haskell
+myMap :: (a -> b) -> [a] -> [b]
+myMap f = foldr (\x acc -> f x : acc) []
+
+-- Or equivalently:
+myMap f = foldr ((:) . f) []
+```
+
+### Defining Filter with Foldr
+
+```haskell
+myFilter :: (a -> Bool) -> [a] -> [a]
+myFilter p = foldr (\x acc -> if p x then x : acc else acc) []
 ```
 
 ### Custom Higher-Order Functions
@@ -916,26 +955,214 @@ applyTwice (+1) 5  -- 7
 applyTwice (*2) 3  -- 12
 ```
 
-### Map with Conditional
+### Operator Sections
 
-Transform only elements meeting a condition:
+Partially apply operators:
 
 ```haskell
--- Keep all, transform only evens
-map (\x -> if even x then x^2 else x) [1..5]  -- [1,4,3,16,5]
-
--- Using list comprehension
-[if even x then x^2 else x | x <- [1..5]]
+(+1)    -- adds 1 to its argument
+(*2)    -- doubles its argument
+(>5)    -- checks if greater than 5
+(5>)    -- checks if 5 is greater than argument
+(/2)    -- divides by 2
+(2/)    -- divides 2 by argument
 ```
 
-### Combining Map and Filter
+---
+
+## User-Defined Data Types
+
+### Type Declarations (Type Synonyms)
+
+Create a new name for an existing type using `type`:
 
 ```haskell
--- Filter, then map
-map (^2) (filter even [1..10])  -- [4,16,36,64,100]
+type String = [Char]
+```
 
--- Equivalent list comprehension
-[x^2 | x <- [1..10], even x]
+`String` is now a synonym for `[Char]`.
+
+**Making Types More Readable:**
+```haskell
+type Pos = (Int, Int)
+
+origin :: Pos
+origin = (0, 0)
+
+left :: Pos -> Pos
+left (x, y) = (x - 1, y)
+```
+
+**Parameterized Type Synonyms:**
+```haskell
+type Pair a = (a, a)
+
+mult :: Pair Int -> Int
+mult (m, n) = m * n
+
+copy :: a -> Pair a
+copy x = (x, x)
+```
+
+### Data Declarations (New Types)
+
+Create completely new types with `data`:
+
+```haskell
+data Bool = False | True
+```
+
+- `Bool` is a new type
+- `False` and `True` are **constructors** (the only values of type `Bool`)
+
+**Key Rules:**
+- Type and constructor names must start with uppercase
+- Values of new types can be used like built-in types
+
+**Example: Custom Answer Type**
+```haskell
+data Answer = Yes | No | Unknown
+
+answers :: [Answer]
+answers = [Yes, No, Unknown]
+
+flip :: Answer -> Answer
+flip Yes = No
+flip No = Yes
+flip Unknown = Unknown
+```
+
+### Constructors with Parameters
+
+Constructors can take arguments:
+
+```haskell
+data Shape = Circle Float | Rect Float Float
+```
+
+- `Shape` has values like `Circle 5.0` or `Rect 3.0 4.0`
+- Constructors are functions:
+  - `Circle :: Float -> Shape`
+  - `Rect :: Float -> Float -> Shape`
+
+**Using Shapes:**
+```haskell
+square :: Float -> Shape
+square n = Rect n n
+
+area :: Shape -> Float
+area (Circle r) = pi * r^2
+area (Rect x y) = x * y
+```
+
+### Parameterized Data Types
+
+Data declarations can have type parameters:
+
+```haskell
+data Maybe a = Nothing | Just a
+```
+
+- `Maybe Int` can be `Nothing` or `Just 5`
+- `Maybe String` can be `Nothing` or `Just "hello"`
+
+**Safe Functions with Maybe:**
+```haskell
+safeDiv :: Int -> Int -> Maybe Int
+safeDiv _ 0 = Nothing
+safeDiv m n = Just (m `div` n)
+
+safeHead :: [a] -> Maybe a
+safeHead [] = Nothing
+safeHead xs = Just (head xs)
+```
+
+---
+
+## Recursive Types
+
+Types can be defined in terms of themselves.
+
+### Natural Numbers
+
+```haskell
+data Nat = Zero | Succ Nat
+```
+
+- `Zero` represents 0
+- `Succ` represents successor (n + 1)
+- `Succ (Succ Zero)` represents 2
+
+**Converting between Nat and Int:**
+```haskell
+nat2int :: Nat -> Int
+nat2int Zero = 0
+nat2int (Succ n) = 1 + nat2int n
+
+int2nat :: Int -> Nat
+int2nat 0 = Zero
+int2nat n = Succ (int2nat (n - 1))
+```
+
+**Addition on Nat:**
+```haskell
+add :: Nat -> Nat -> Nat
+add Zero n = n
+add (Succ m) n = Succ (add m n)
+```
+
+### Arithmetic Expressions
+
+```haskell
+data Expr = Val Int
+          | Add Expr Expr
+          | Mul Expr Expr
+```
+
+**Example:** `1 + (2 * 3)` is represented as:
+```haskell
+Add (Val 1) (Mul (Val 2) (Val 3))
+```
+
+**Evaluating Expressions:**
+```haskell
+eval :: Expr -> Int
+eval (Val n) = n
+eval (Add x y) = eval x + eval y
+eval (Mul x y) = eval x * eval y
+```
+
+**Counting Nodes:**
+```haskell
+size :: Expr -> Int
+size (Val n) = 1
+size (Add x y) = size x + size y
+size (Mul x y) = size x + size y
+```
+
+### Binary Trees
+
+```haskell
+data Tree a = Leaf a | Node (Tree a) a (Tree a)
+```
+
+**Example Tree:**
+```haskell
+t :: Tree Int
+t = Node (Node (Leaf 1) 3 (Leaf 4)) 5 (Node (Leaf 6) 7 (Leaf 9))
+```
+
+**Tree Operations:**
+```haskell
+-- Check if element exists
+occurs :: Eq a => a -> Tree a -> Bool
+occurs x (Leaf v) = x == v
+occurs x (Node left v right) = x == v || occurs x left || occurs x right
+
+-- Flatten tree to list
+flatten :: Tree a -> [a]
+flatten (Leaf x) = [x]
+flatten (Node left x right) = flatten left ++ [x] ++ flatten right
 ```
 
 ---
@@ -950,38 +1177,6 @@ A `String` is a list of characters: `String = [Char]`
 "hello" == ['h','e','l','l','o']  -- True
 ```
 
-### Characters vs Strings
-
-```haskell
-'h'       -- Char (single character, single quotes)
-"h"       -- String (string, double quotes)
-"hello"   -- String (list of chars)
-['h','e','l','l','o']  -- String
-```
-
-### String Operations
-
-```haskell
-length "hello"        -- 5
-"He" ++ "llo"         -- "Hello" (concatenation)
-head "hello"          -- 'h'
-tail "hello"          -- "ello"
-take 3 "hello"        -- "hel"
-drop 2 "hello"        -- "llo"
-reverse "hello"       -- "olleh"
-```
-
-### Iterating Over Strings
-
-Since strings are lists, use all list functions:
-
-```haskell
-map toUpper "hello"               -- "HELLO"
-map toLower "HELLO"               -- "hello"
-filter (/= 'a') "banana"         -- "bnn"
-[c | c <- "hello", c /= 'l']     -- "heo"
-```
-
 ### Case Conversion
 
 Import `Data.Char`:
@@ -994,63 +1189,9 @@ toLower 'A'          -- 'a'
 map toUpper "hello"  -- "HELLO"
 ```
 
-### Accessing First Character
-
-```haskell
-head "hello"             -- 'h'
-"hello" !! 0             -- 'h'
-
--- Safe access (pattern matching)
-firstChar :: String -> Char
-firstChar (c:_) = c
-firstChar [] = error "Empty!"
-
--- Safe with Maybe
-safeFirstChar :: String -> Maybe Char
-safeFirstChar (c:_) = Just c
-safeFirstChar [] = Nothing
-```
-
-### Converting Between Lists and Strings
-
-**List of Characters to String:**
-
-```haskell
-['h','e','l','l','o']  -- "hello" (already a string)
-```
-
-**List of Numbers to String:**
-
-```haskell
-concatMap show [1,2,3]          -- "123"
-map show [1,2,3]                -- ["1","2","3"]
-intercalate "," (map show [1,2,3])  -- "1,2,3"
-
--- List comprehension
-concat [show x | x <- [1,2,3]]  -- "123"
-```
-
-**Single Character to String:**
-
-```haskell
-[c]        -- wraps character in a list
-'h' : ""   -- also works
-```
-
-### String Formatting with Show
-
-```haskell
-show 42                    -- "42"
-show 3.14                  -- "3.14"
-show True                  -- "True"
-show [1,2,3]              -- "[1,2,3]"
-```
-
 ---
 
 ## Modules & Imports
-
-Modules help organize code and provide reusable functionality.
 
 ### Importing Modules
 
@@ -1066,40 +1207,6 @@ import qualified Data.Map as Map  -- qualify to avoid conflicts
 - `Data.List` – list operations (sort, group, nub, etc.)
 - `Data.Char` – character operations (toUpper, toLower, isDigit, etc.)
 - `Data.Maybe` – Maybe type utilities
-- `Text.Printf` – formatted printing
-
-### Using Imported Functions
-
-```haskell
-import Data.List (sort)
-sort [3,1,2]  -- [1,2,3]
-
-import Data.Char (toUpper)
-map toUpper "hello"  -- "HELLO"
-```
-
-### Qualified Imports
-
-```haskell
-import qualified Data.Map as Map
-Map.fromList [(1, "a"), (2, "b")]
-```
-
-### Creating Your Own Module
-
-```haskell
-module MyModule where
-
-square x = x * x
-double x = x * 2
-```
-
-Then import:
-
-```haskell
-import MyModule
-square 5  -- 25
-```
 
 ---
 
@@ -1114,6 +1221,8 @@ main :: IO ()
 main = do
   putStrLn "Hello!"
   putStrLn "What's your name?"
+  name <- getLine
+  putStrLn ("Hello, " ++ name ++ "!")
 ```
 
 ### Common I/O Functions
@@ -1125,113 +1234,135 @@ print :: Show a => a -> IO ()  -- print any type
 getLine :: IO String           -- read a line of input
 ```
 
-### Simple Program Example
-
-```haskell
-main :: IO ()
-main = do
-  putStrLn "What's your name?"
-  name <- getLine
-  putStrLn ("Hello, " ++ name ++ "!")
-```
-
-### Reading Multiple Lines
-
-```haskell
-main :: IO ()
-main = do
-  putStr "Enter first number: "
-  x <- readLine
-  putStr "Enter second number: "
-  y <- readLine
-  putStrLn ("Sum: " ++ show (read x + read y))
-
-readLine :: IO Int
-readLine = read <$> getLine
-```
-
 ---
 
 ## Practical Examples
 
 ### Example 1: Count Positive Numbers
 
-**Recursive approach:**
-
-```haskell
-countPositives :: [Int] -> Int
-countPositives [] = 0
-countPositives (x:xs) = (if x > 0 then 1 else 0) + countPositives xs
-```
-
-**Using list comprehension and length:**
-
 ```haskell
 countPositives :: [Int] -> Int
 countPositives xs = length [x | x <- xs, x > 0]
+
+-- Using filter:
+countPositives xs = length (filter (>0) xs)
 ```
 
-### Example 2: Pythagorean Theorem
-
-```haskell
-square :: Int -> Int
-square x = x * x
-
-pyth :: Int -> Int -> Int
-pyth a b = square a + square b
-
-isTriple :: Int -> Int -> Int -> Bool
-isTriple a b c = pyth a b == square c
-```
-
-### Example 3: Capitalize String
+### Example 2: Capitalize String
 
 ```haskell
 import Data.Char (toUpper, toLower)
 
 capitalised :: String -> String
-capitalised []     = []
-capitalised (x:xs) = toUpper x : map toLower xs
-
--- Alternative using list comprehension
 capitalised [] = []
-capitalised (x:xs) = toUpper x : [toLower y | y <- xs]
+capitalised (x:xs) = toUpper x : map toLower xs
 ```
 
-### Example 4: Filter Evens and Halve
-
-```haskell
-halfEvens :: [Int] -> [Int]
-halfEvens xs = [if even x then x `div` 2 else x | x <- xs]
-
--- Alternative
-halfEvens xs = [x `div` 2 | x <- xs, even x]
-```
-
-### Example 5: In Range Filtering
+### Example 3: In Range Filtering
 
 ```haskell
 inRange :: Int -> Int -> [Int] -> [Int]
-inRange low high xs = [x | x <- xs, x >= low, x <= high]
-
--- Example: inRange 5 10 [1..15] => [5,6,7,8,9,10]
+inRange low high xs = filter (\x -> x >= low && x <= high) xs
 ```
 
-### Example 6: Title Case
+---
 
+## Lab 3 Exercise Solutions
+
+Here are approaches for Lab Sheet 3 exercises using `map`, `filter`, and `foldr`:
+
+### 1. mult - Product of a list
 ```haskell
-import Data.Char (toUpper, toLower)
+mult :: Num a => [a] -> a
+mult = foldr (*) 1
 
-title :: [String] -> [String]
-title words = [capitaliseWord w | w <- words]
-  where
-    capitaliseWord [] = []
-    capitaliseWord (x:xs)
-      | length (x:xs) >= 4 = toUpper x : map toLower xs
-      | otherwise = map toLower (x:xs)
+-- Example: mult [1,2,3,4] = 24
+```
 
--- Example: title ["the", "bosun", "and", "the", "bridge"] 
--- => ["the", "Bosun", "and", "the", "Bridge"]
+### 2. posList - Return only positive integers
+```haskell
+posList :: [Int] -> [Int]
+posList = filter (>0)
+
+-- Example: posList [-1,0,1,2,-3] = [1,2]
+```
+
+### 3. trueList - Check if all Booleans are True
+```haskell
+trueList :: [Bool] -> Bool
+trueList = foldr (&&) True
+
+-- Example: trueList [True, True, True] = True
+-- Example: trueList [True, False, True] = False
+```
+
+### 4. evenList - Check if all numbers are even
+```haskell
+evenList :: [Int] -> Bool
+evenList = foldr (\x acc -> even x && acc) True
+
+-- Or using all:
+evenList xs = foldr (&&) True (map even xs)
+
+-- Example: evenList [2,4,6] = True
+-- Example: evenList [2,3,4] = False
+```
+
+### 5. maxList - Maximum of a list (polymorphic)
+```haskell
+maxList :: Ord a => [a] -> a
+maxList = foldr1 max
+
+-- Example: maxList [3,1,4,1,5] = 5
+```
+
+### 6. inRange - Numbers within a range
+```haskell
+inRange :: Int -> Int -> [Int] -> [Int]
+inRange low high = filter (\x -> x >= low && x <= high)
+
+-- Example: inRange 2 5 [1,2,3,4,5,6] = [2,3,4,5]
+```
+
+### 7. countPositives - Count positive numbers
+```haskell
+countPositives :: [Int] -> Int
+countPositives = length . filter (>0)
+
+-- Or using foldr:
+countPositives = foldr (\x acc -> if x > 0 then acc + 1 else acc) 0
+
+-- Example: countPositives [-1,0,1,2,3] = 3
+```
+
+### 8. myLength - Using foldr and map
+```haskell
+myLength :: [a] -> Int
+myLength xs = sum (map (\_ -> 1) xs)
+
+-- Or:
+myLength = sum . map (const 1)
+
+-- Example: myLength [1,2,3,4,5] = 5
+```
+
+### 9. myMap - Define map using foldr
+```haskell
+myMap :: (a -> b) -> [a] -> [b]
+myMap f = foldr (\x acc -> f x : acc) []
+
+-- Or:
+myMap f = foldr ((:) . f) []
+
+-- Example: myMap (*2) [1,2,3] = [2,4,6]
+```
+
+### 10. myLength' - Using foldr only
+```haskell
+myLength' :: [a] -> Int
+myLength' = foldr (\_ acc -> acc + 1) 0
+
+-- Example: myLength' [1,2,3,4,5] = 5
 ```
 
 ---
@@ -1246,35 +1377,32 @@ title words = [capitaliseWord w | w <- words]
 | Lambda | `\x -> x + 1` | Anonymous function |
 | List creation | `[1,2,3]` | Create a list |
 | Cons operator | `1 : [2,3]` | Prepend to list |
-| List comprehension | `[x^2 | x <- [1..5]]` | Generate list |
+| List comprehension | `[x^2 \| x <- [1..5]]` | Generate list |
 | Pattern matching | `f (x:xs) = ...` | Unpack values |
 | Guard | `f x \| x > 0 = ...` | Conditional logic |
 | Where clause | `f x = a + b where a = ...` | Local definitions |
 | Map | `map (*2) [1,2,3]` | Apply function to all |
 | Filter | `filter even [1..10]` | Select elements |
-| Fold | `foldr (+) 0 [1,2,3]` | Accumulate |
-| If-then-else | `if cond then a else b` | Simple conditional |
-| Case expression | `case x of pattern -> ...` | Pattern-based branch |
-| String ops | `"hello" ++ " world"` | Concatenate strings |
-| Module import | `import Data.Char` | Load module |
-| I/O | `putStrLn "Hello"` | Input/output |
+| Foldr | `foldr (+) 0 [1,2,3]` | Accumulate |
+| Type synonym | `type Pos = (Int, Int)` | Alias for existing type |
+| Data type | `data Bool = True \| False` | New type with constructors |
+| Maybe | `Just 5` or `Nothing` | Optional value |
+| Recursive type | `data Nat = Zero \| Succ Nat` | Self-referential type |
 
 ---
 
 ## Summary
 
-This guide covers the essential theory of Haskell programming:
+This extended guide covers:
 
-- **Pure functional paradigm:** Functions are first-class values, immutability is default
-- **Strong typing:** Catch errors at compile time
-- **Pattern matching & guards:** Powerful ways to express conditional logic
-- **List operations:** Map, filter, fold, comprehensions
-- **Recursion:** The replacement for loops
-- **Higher-order functions:** Functions that work with functions
+- **Core Haskell:** Types, functions, pattern matching, guards, recursion
+- **Higher-Order Functions:** `map`, `filter`, `foldr`, `foldl` with detailed explanations
+- **User-Defined Types:** `type` synonyms, `data` declarations, recursive types
+- **Lab 3 Solutions:** All 10 exercises with idiomatic Haskell solutions
 
-Master these concepts, and you'll be able to tackle most beginner to intermediate Haskell problems. Practice by writing functions, loading them in GHCi, and testing with examples.
+Master these concepts, and you'll be able to tackle most Haskell problems. Practice by writing functions, loading them in GHCi, and testing with examples.
 
 ---
 
-**Last Updated:** November 2025
-**Status:** Complete Theory Reference for Haskell Beginners
+**Last Updated:** November 2025  
+**Status:** Extended Edition with Data Types and Lab 3 Solutions
